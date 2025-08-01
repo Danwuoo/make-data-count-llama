@@ -1,0 +1,15 @@
+transformers
+torch
+sentence-transformers
+faiss-cpu
+PyMuPDF
+lxml
+pydantic
+spacy
+regex
+fuzzywuzzy
+csvkit
+pyarrow
+cerberus
+openprompt
+promptbench
