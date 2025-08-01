@@ -1,0 +1,1 @@
+{"context_id": "ctx_sample", "question_id": "qst_0001", "question_text": "Is the reference to data truly a primary citation?", "question_type": "classification_challenge", "confidence_level": 0.41, "source": {"doc_id": "DOC1", "section": "results", "original_prediction": "secondary"}}
