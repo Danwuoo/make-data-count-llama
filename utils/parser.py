@@ -8,7 +8,6 @@ from typing import Optional, Union
 import fitz
 
 from .pdf_extractor import (
-    DOIExtractor,
     LayoutValidator,
     PageSegmenter,
     ParagraphRestorer,
@@ -19,13 +18,14 @@ from .pdf_extractor import (
     Section,
 )
 from .xml_extractor import XMLExtractor, ParsedXML
+from .doi_recognizer import DOIRecognizer
 
 
 class PDFExtractor:
     """High level interface for parsing PDFs into structured data."""
 
     def __init__(self) -> None:
-        self.doi_extractor = DOIExtractor()
+        self.id_recognizer = DOIRecognizer()
         self.restorer = ParagraphRestorer()
         self.reference_splitter = ReferenceSplitter()
         self.validator = LayoutValidator()
@@ -49,7 +49,8 @@ class PDFExtractor:
                 paragraphs_with_pages.append((para, page["page"]))
 
         full_text = "\n".join(p for p, _ in paragraphs_with_pages)
-        doi = self.doi_extractor.extract(full_text)
+        ids = self.id_recognizer.recognize(full_text)
+        doi = next((i.normalized for i in ids if i.id_type == "doi"), None)
 
         title_text = (
             paragraphs_with_pages[0][0]
