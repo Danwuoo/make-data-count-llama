@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 import fitz
 
@@ -17,6 +18,7 @@ from .pdf_extractor import (
     ParsedPDF,
     Section,
 )
+from .xml_extractor import XMLExtractor, ParsedXML
 
 
 class PDFExtractor:
@@ -103,7 +105,14 @@ class PDFExtractor:
         return parsed
 
 
-def parse_document(path: str) -> ParsedPDF:
-    """Convenience wrapper returning :class:`ParsedPDF` for *path*."""
-    extractor = PDFExtractor()
+ParsedDocument = Union[ParsedPDF, ParsedXML]
+
+
+def parse_document(path: str) -> ParsedDocument:
+    """Return a parsed representation for *path* regardless of format."""
+    ext = Path(path).suffix.lower()
+    if ext == ".pdf":
+        extractor = PDFExtractor()
+        return extractor.extract(path)
+    extractor = XMLExtractor()
     return extractor.extract(path)
