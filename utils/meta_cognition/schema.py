@@ -59,3 +59,29 @@ class ErrorRecord:
         data = data.copy()
         data["error_type"] = ErrorType(data["error_type"])
         return cls(**data)
+
+
+@dataclass
+class PromptPairItem:
+    """Standard instruction tuning sample."""
+
+    instruction: str
+    input: str
+    output: str
+
+    def to_dict(self) -> Dict[str, str]:  # pragma: no cover - simple helper
+        return asdict(self)
+
+
+@dataclass
+class ContrastivePromptPair:
+    """Positive and negative sample for contrastive tuning."""
+
+    positive: PromptPairItem
+    negative: PromptPairItem
+
+    def to_dict(self) -> Dict[str, Any]:  # pragma: no cover - simple helper
+        return {
+            "positive": self.positive.to_dict(),
+            "negative": self.negative.to_dict(),
+        }

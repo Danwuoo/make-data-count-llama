@@ -2,12 +2,22 @@
 
 from .error_logger import ErrorLogger
 from .error_query import ErrorQueryAPI
-from .schema import ErrorRecord, ErrorType, ErrorSource
+from .prompt_pair_generator import PromptPairGenerator
+from .schema import (
+    ContrastivePromptPair,
+    ErrorRecord,
+    ErrorSource,
+    ErrorType,
+    PromptPairItem,
+)
 
 __all__ = [
     "ErrorLogger",
     "ErrorQueryAPI",
+    "PromptPairGenerator",
     "ErrorRecord",
     "ErrorType",
     "ErrorSource",
+    "PromptPairItem",
+    "ContrastivePromptPair",
 ]
