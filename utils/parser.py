@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
+from dataclasses import asdict
 
 import fitz
 
@@ -18,7 +19,8 @@ from .pdf_extractor import (
     Section,
 )
 from .xml_extractor import XMLExtractor, ParsedXML
-from .doi_recognizer import DOIRecognizer
+from .doi_recognizer import DOIRecognizer, AccessionMatcher
+from .parsed_doc import ParsedDoc
 
 
 class PDFExtractor:
@@ -31,6 +33,7 @@ class PDFExtractor:
         self.validator = LayoutValidator()
         self.encoder = SchemaEncoder()
         self.errors = PDFErrorCollector()
+        self.acc_matcher = AccessionMatcher()
 
     def extract(self, pdf_path: str) -> ParsedPDF:
         """Extract structured content from *pdf_path*."""
@@ -51,6 +54,7 @@ class PDFExtractor:
         full_text = "\n".join(p for p, _ in paragraphs_with_pages)
         ids = self.id_recognizer.recognize(full_text)
         doi = next((i.normalized for i in ids if i.id_type == "doi"), None)
+        accessions = self.acc_matcher.match(full_text)
 
         title_text = (
             paragraphs_with_pages[0][0]
@@ -99,6 +103,7 @@ class PDFExtractor:
             ],
             "references": [ref.dict() for ref in references],
             "doi": doi,
+            "accessions": [asdict(a) for a in accessions],
         }
 
         parsed = self.encoder.encode(data)
@@ -106,14 +111,44 @@ class PDFExtractor:
         return parsed
 
 
-ParsedDocument = Union[ParsedPDF, ParsedXML]
+class FileParser:
+    """Dispatch to the appropriate extractor and normalise output."""
+
+    def parse(self, path: str) -> ParsedDoc:
+        ext = Path(path).suffix.lower()
+        doc_id = Path(path).stem
+        if ext == ".pdf":
+            extractor = PDFExtractor()
+            parsed: ParsedPDF = extractor.extract(path)
+            with fitz.open(path) as doc:
+                page_count = doc.page_count
+            return ParsedDoc(
+                doc_id=doc_id,
+                source_type="pdf",
+                title=parsed.title.text,
+                abstract=parsed.abstract.text if parsed.abstract else "",
+                body="\n".join(sec.text for sec in parsed.body),
+                references=[sec.text for sec in parsed.references],
+                doi=parsed.doi,
+                accessions=parsed.accessions,
+                metadata={"page_count": page_count},
+            )
+        extractor = XMLExtractor()
+        parsed_xml: ParsedXML = extractor.extract(path)
+        return ParsedDoc(
+            doc_id=doc_id,
+            source_type="xml",
+            title=parsed_xml.title.text,
+            abstract=parsed_xml.abstract.text if parsed_xml.abstract else "",
+            body="\n".join(sec.text for sec in parsed_xml.body),
+            references=[sec.text for sec in parsed_xml.references],
+            doi=parsed_xml.doi,
+            accessions=parsed_xml.accessions,
+            metadata={},
+        )
 
 
-def parse_document(path: str) -> ParsedDocument:
-    """Return a parsed representation for *path* regardless of format."""
-    ext = Path(path).suffix.lower()
-    if ext == ".pdf":
-        extractor = PDFExtractor()
-        return extractor.extract(path)
-    extractor = XMLExtractor()
-    return extractor.extract(path)
+def parse_document(path: str) -> ParsedDoc:
+    """Return a :class:`ParsedDoc` representation for *path*."""
+    parser = FileParser()
+    return parser.parse(path)
