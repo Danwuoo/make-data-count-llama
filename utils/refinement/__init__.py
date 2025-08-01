@@ -1,6 +1,7 @@
 """L4: Self-refinement loop utilities."""
 
 from .self_questioner import SelfQuestioner
+from .self_corrector import SelfCorrector
 
 
 def refine_prediction(prediction: str) -> str:
@@ -8,4 +9,4 @@ def refine_prediction(prediction: str) -> str:
     return prediction
 
 
-__all__ = ["SelfQuestioner", "refine_prediction"]
+__all__ = ["SelfQuestioner", "SelfCorrector", "refine_prediction"]
