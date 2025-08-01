@@ -10,6 +10,7 @@ class SourceInfo(BaseModel):
     start_sentence_idx: int = Field(..., ge=0)
     end_sentence_idx: int = Field(..., ge=0)
     original_paragraph_id: int = Field(..., ge=0)
+    source_type: str = ""
 
 
 class ContextUnit(BaseModel):
