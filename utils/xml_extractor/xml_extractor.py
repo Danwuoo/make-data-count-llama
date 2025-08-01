@@ -6,7 +6,7 @@ from typing import Dict
 
 from lxml import etree
 
-from .accession_extractor import AccessionExtractor
+from ..doi_recognizer import AccessionMatcher
 from .crossref_parser import CrossrefParser
 from .error_collector import XMLErrorCollector
 from .format_detector import XMLFormatDetector
@@ -22,7 +22,7 @@ class XMLExtractor:
         self.detector = XMLFormatDetector()
         self.jats = JATSParser()
         self.crossref = CrossrefParser()
-        self.accessions = AccessionExtractor()
+        self.accessions = AccessionMatcher()
         self.validator = LayoutValidator()
         self.encoder = SchemaEncoder()
         self.errors = XMLErrorCollector()
@@ -57,9 +57,13 @@ class XMLExtractor:
         if data.get("abstract"):
             text_blocks.append(data["abstract"]["text"])
         text_blocks.extend(section["text"] for section in data.get("body", []))
-        text_blocks.extend(section["text"] for section in data.get("references", []))
+        text_blocks.extend(
+            section["text"] for section in data.get("references", [])
+        )
         all_text = " ".join(text_blocks)
-        data["accessions"] = self.accessions.extract(all_text)
+        data["accessions"] = [
+            a.__dict__ for a in self.accessions.match(all_text)
+        ]
 
         parsed = self.encoder.encode(data)
         self.validator.validate(parsed)

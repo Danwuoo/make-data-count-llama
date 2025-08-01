@@ -6,6 +6,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from ..doi_recognizer import AccessionItem
+
 
 class Section(BaseModel):
     """A text block and the pages it originates from."""
@@ -22,6 +24,7 @@ class ParsedPDF(BaseModel):
     body: List[Section] = Field(default_factory=list)
     references: List[Section] = Field(default_factory=list)
     doi: Optional[str] = None
+    accessions: List[AccessionItem] = Field(default_factory=list)
 
 
 class SchemaEncoder:
