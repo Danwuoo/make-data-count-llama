@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 
 class DOINormalizer:
@@ -16,10 +17,31 @@ class DOINormalizer:
 
 
 class AccessionNormalizer:
-    """Normalize other identifier types such as PMID and GSE."""
+    """Normalize identifiers such as GEO, SRA or PDB codes."""
+
+    PREFIXES = {
+        "geo": "GSE",
+        "sra": ("SRR", "SRP", "SRS", "SRX"),
+        "ena": ("ERR", "ERP", "ERS", "ERX"),
+        "ega": ("EGAD", "EGAS", "EGAE", "EGAN"),
+        "pdb": "",
+        "pmid": "PMID",
+        "pmcid": "PMC",
+    }
 
     def normalize(self, value: str, id_type: str) -> str:
-        clean = re.sub(r"[^0-9A-Za-z]", "", value)
-        if id_type == "pmcid" and not clean.upper().startswith("PMC"):
-            clean = f"PMC{clean}"
-        return f"{id_type}:{clean.lower()}"
+        """Return a normalised identifier with standard prefix."""
+
+        clean = unicodedata.normalize("NFKC", value)
+        clean = re.sub(r"\s+", "", clean).upper()
+        prefix = self.PREFIXES.get(id_type.lower(), "")
+
+        if isinstance(prefix, tuple):
+            if not any(clean.startswith(p) for p in prefix):
+                clean = prefix[0] + re.sub(r"[^0-9A-Z]", "", clean)
+        elif prefix and not clean.startswith(prefix):
+            clean = prefix + re.sub(r"[^0-9A-Z]", "", clean)
+        else:
+            clean = re.sub(r"[^0-9A-Z]", "", clean)
+
+        return f"{id_type.upper()}:{clean}"
