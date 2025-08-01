@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Optional
 
 from .confidence_scorer import ConfidenceScorer
 from .decoding_strategy import DecodingStrategy
@@ -22,12 +22,18 @@ class FinalPrediction:
     used_strategy: str
     label_source: str
     logits: Dict[str, float]
+    is_consistent: Optional[bool] = None
+    perturbation_score: Optional[float] = None
 
 
 class LLMOutputDecoder:
     """High-level decoder combining text and logit cues."""
 
-    def __init__(self, labels: Sequence[str] | None = None, min_confidence: float = 0.0) -> None:
+    def __init__(
+        self,
+        labels: Sequence[str] | None = None,
+        min_confidence: float = 0.0,
+    ) -> None:
         self.labels = list(labels or ["primary", "secondary", "none"])
         self.extractor = LabelExtractor(self.labels)
         self.logit_decoder = LogitDecoder(self.labels)
@@ -42,7 +48,7 @@ class LLMOutputDecoder:
         scores: Sequence[Sequence[float]],
         strategy: DecodingStrategy = DecodingStrategy.TEXT2LABEL,
     ) -> FinalPrediction:
-        """Decode model ``text`` and ``scores`` into a :class:`FinalPrediction`."""
+        """Decode model ``text`` and ``scores`` into a ``FinalPrediction``."""
 
         probs, logits = self.logit_decoder.decode(scores)
         logit_label = max(probs, key=probs.get)
