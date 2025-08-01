@@ -13,3 +13,4 @@ pyarrow
 cerberus
 openprompt
 promptbench
+jinja2
