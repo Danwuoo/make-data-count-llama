@@ -27,6 +27,7 @@ class CorrectionProposal:
     correction_reason: str
     accepted: bool
     question_id: str
+    metadata: Dict[str, str | float] | None = None
 
 
 @dataclass
