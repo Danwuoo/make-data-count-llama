@@ -14,6 +14,7 @@ def format_context(
     original_paragraph_id: int,
     token_count: int,
     importance_score: float,
+    source_type: str | None = None,
 ) -> ContextUnit:
     """Create a :class:`ContextUnit` with standard metadata."""
 
@@ -23,6 +24,7 @@ def format_context(
         start_sentence_idx=start_sentence_idx,
         end_sentence_idx=end_sentence_idx,
         original_paragraph_id=original_paragraph_id,
+        source_type=source_type or section,
     )
     return ContextUnit(
         context_id=context_id,

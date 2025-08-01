@@ -19,7 +19,10 @@ def test_build_context_basic():
     )
     contexts = build_context(doc, max_tokens=20, stride=5)
     assert contexts, "No contexts returned"
+    assert contexts[0].source.section == "intro"
+    assert contexts[0].source.source_type == "title+abstract"
     for ctx in contexts:
         assert ctx.doc_id == "DOC1"
+    for ctx in contexts[1:]:
         assert ctx.token_count <= 20
         assert ctx.source.section in {"title", "abstract", "body"}

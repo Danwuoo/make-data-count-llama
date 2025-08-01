@@ -121,6 +121,7 @@ class SlidingWindowContext:
                 original_paragraph_id=original_paragraph_id,
                 token_count=token_count,
                 importance_score=importance,
+                source_type=section,
             )
             contexts.append(ctx)
         return validate_contexts(contexts, self.max_tokens)
