@@ -6,8 +6,10 @@ try:  # pragma: no cover - optional dependencies
     from .vector_indexer import VectorIndexer
     from .index_storage import IndexStorageManager
     from .context_filter import ContextFilter
+    from .memory_builder import MemoryBuilder
 except Exception:  # pragma: no cover - optional dependencies
-    ContextRetriever = EmbeddingEncoder = VectorIndexer = IndexStorageManager = ContextFilter = None
+    ContextRetriever = EmbeddingEncoder = VectorIndexer = None
+    IndexStorageManager = ContextFilter = MemoryBuilder = None
 
 from .knn_ranker import KNNRanker
 from .penalty_rule import ContextPenaltyRule
@@ -22,6 +24,7 @@ __all__ = [
     "VectorIndexer",
     "IndexStorageManager",
     "ContextFilter",
+    "MemoryBuilder",
     "KNNRanker",
     "ContextPenaltyRule",
     "RankedContextBuilder",
