@@ -47,6 +47,12 @@ class SelfCorrector:
             corrected_label=result.predicted_label,
             corrected_confidence=result.confidence,
         )
+        metadata = {
+            "original_confidence": original_pred.confidence,
+            "corrected_confidence": result.confidence,
+            "reask_prompt": prompt,
+            "raw_response": getattr(result, "raw_output", ""),
+        }
         proposal = CorrectionProposal(
             context_id=self_question.context_id,
             original_label=original_pred.predicted_label,
@@ -57,6 +63,7 @@ class SelfCorrector:
             correction_reason=reason,
             accepted=accepted,
             question_id=self_question.question_id,
+            metadata=metadata,
         )
         if self.logger:
             self.logger.log(proposal)
