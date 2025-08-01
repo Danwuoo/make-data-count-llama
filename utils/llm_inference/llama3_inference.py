@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from typing import Any, Dict, Optional
 
 from .inference_engine import EngineConfig, InferenceEngine
-from .output_parser import OutputParser
+from .output_decoder import LLMOutputDecoder, DecodingStrategy
 from .prompt_generator import PromptGenerator
 from .replay_logger import PromptReplayLogger, ReplayRecord
 from .tokenizer_wrapper import TokenizerConfig, TokenizerWrapper
@@ -39,7 +39,7 @@ class LLaMA3Inference:
             TokenizerConfig(model_path=model_path)
         )
         self.engine = InferenceEngine(EngineConfig(model_path=model_path))
-        self.parser = OutputParser()
+        self.decoder = LLMOutputDecoder()
         self.validator = InferenceValidator()
         self.logger: Optional[PromptReplayLogger] = None
         if replay_log:
@@ -64,19 +64,26 @@ class LLaMA3Inference:
             temperature=temperature,
         )
         text = self.tokenizer.decode(generated["tokens"])
-        parsed = self.parser.parse(text, generated["scores"])
+        prediction = self.decoder.decode(
+            context_id=context_id,
+            text=text,
+            scores=generated["scores"],
+            strategy=DecodingStrategy.TEXT2LABEL,
+        )
 
         result = LLMResult(
             context_id=context_id,
-            predicted_label=parsed.label,
-            confidence=parsed.confidence,
-            raw_output=parsed.text,
+            predicted_label=prediction.final_label,
+            confidence=prediction.confidence,
+            raw_output=prediction.raw_output,
             prompt=prompt,
-            logits=parsed.logits,
+            logits=prediction.logits,
             meta={
                 "model_name": self.model_name,
                 "template_version": self.template_version,
                 "temperature": temperature,
+                "used_strategy": prediction.used_strategy,
+                "label_source": prediction.label_source,
             },
         )
         self.validator.validate(asdict(result))
@@ -85,7 +92,7 @@ class LLaMA3Inference:
             self.logger.log(
                 ReplayRecord(
                     prompt=prompt,
-                    output=parsed.text,
+                    output=prediction.raw_output,
                     metadata=result.meta,
                 )
             )
