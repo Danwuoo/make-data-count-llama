@@ -12,7 +12,7 @@ from .schema import CorrectionProposal
 class CorrectionLogger:
     """Append correction proposals to a JSONL log file."""
 
-    def __init__(self, log_path: str = "data/refinement/corrections.jsonl") -> None:
+    def __init__(self, log_path: str = "data/predictions/corrections.jsonl") -> None:
         self.log_path = Path(log_path)
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
 
