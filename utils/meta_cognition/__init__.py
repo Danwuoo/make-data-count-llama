@@ -3,6 +3,11 @@
 from .error_logger import ErrorLogger
 from .error_query import ErrorQueryAPI
 from .prompt_pair_generator import PromptPairGenerator
+
+try:  # pragma: no cover - optional dependency
+    from .lora_fine_tuner import LoRAFineTuner
+except Exception:  # noqa: BLE001 - fallback when transformers is missing
+    LoRAFineTuner = None
 from .schema import (
     ContrastivePromptPair,
     ErrorRecord,
@@ -20,4 +25,5 @@ __all__ = [
     "ErrorSource",
     "PromptPairItem",
     "ContrastivePromptPair",
+    "LoRAFineTuner",
 ]
