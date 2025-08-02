@@ -1,4 +1,10 @@
-"""Base classes for model-specific inference wrappers."""
+"""Reusable abstractions for model-specific inference backends.
+
+This module defines the :class:`BaseInferenceModel` used by all inference
+wrappers (e.g., LLaMA 3, Mixtral, Qwen, Gemma, DeepSeek). It provides common
+components such as prompt generation, output decoding, validation and optional
+prompt replay logging.
+"""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -104,3 +110,6 @@ class BaseInferenceModel(ABC):
     # Backwards compatibility for older code using ``infer``
     def infer(self, *args: Any, **kwargs: Any) -> LLMResult:
         return self.predict(*args, **kwargs)
+
+
+__all__ = ["BaseInferenceModel", "LLMResult"]
