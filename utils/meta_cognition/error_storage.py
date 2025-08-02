@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import List, Optional
 
 from .schema import ErrorRecord, ErrorType
+from config.path_config import ERRORS_DIR
 
 
 class ErrorStorageManager:
     """Handle persistence of :class:`ErrorRecord` objects."""
 
-    def __init__(self, base_dir: str = "data/errors") -> None:
+    def __init__(self, base_dir: str | Path = ERRORS_DIR) -> None:
         self.base_path = Path(base_dir)
         self.base_path.mkdir(parents=True, exist_ok=True)
         self.all_errors_file = self.base_path / "all_errors.jsonl"

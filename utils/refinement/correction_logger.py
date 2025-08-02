@@ -7,12 +7,13 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .schema import CorrectionProposal
+from config.path_config import CORRECTIONS_LOG_PATH
 
 
 class CorrectionLogger:
     """Append correction proposals to a JSONL log file."""
 
-    def __init__(self, log_path: str = "data/predictions/corrections.jsonl") -> None:
+    def __init__(self, log_path: str | Path = CORRECTIONS_LOG_PATH) -> None:
         self.log_path = Path(log_path)
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
 

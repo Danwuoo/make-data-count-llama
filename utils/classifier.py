@@ -13,8 +13,9 @@ from .llm_inference import (
     PromptPerturbationTester,
     PerturbationReport,
 )
+from config.path_config import MODEL_MOUNT_DIR
 
-_MODEL_PATH = "models/llama-3-8b-instruct"
+_MODEL_PATH = MODEL_MOUNT_DIR / "llama-3-8b-instruct"
 
 
 class LLMClassifier:
