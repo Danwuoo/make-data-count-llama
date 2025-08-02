@@ -13,6 +13,9 @@ any multiprocessing or heavy external dependencies.
 
 from __future__ import annotations
 
+import os
+import sys
+
 import argparse
 import json
 import logging
@@ -21,14 +24,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List
 
-from utils.context_builder.schema import ContextUnit
-from utils.llm_inference.base_inference import (
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from utils.context_builder.schema import ContextUnit  # noqa: E402
+from utils.llm_inference.base_inference import (  # noqa: E402
     BaseInferenceModel,
     LLMResult,
     get_inference_model,
 )
-from utils.output_writer import generate_submission
-from utils.refinement import RefinementEngine
+from utils.output_writer import generate_submission  # noqa: E402
+from utils.refinement import RefinementEngine  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -42,7 +47,11 @@ CONFIDENCE_THRESHOLD = 0.7
 
 def _load_jsonl(path: Path) -> List[ContextUnit]:
     with path.open("r", encoding="utf-8") as fh:
-        return [ContextUnit.model_validate_json(line) for line in fh if line.strip()]
+        return [
+            ContextUnit.model_validate_json(line)
+            for line in fh
+            if line.strip()
+        ]
 
 
 def _load_parquet(path: Path) -> List[ContextUnit]:
@@ -96,7 +105,9 @@ def run_pipeline(
     errors: List[dict] = []
 
     for ctx in contexts:
-        result: LLMResult = model.predict(context_id=ctx.context_id, context=ctx.text)
+        result: LLMResult = model.predict(
+            context_id=ctx.context_id, context=ctx.text
+        )
         pred = {
             "context_id": result.context_id,
             "final_label": result.predicted_label,
@@ -152,7 +163,9 @@ def run_pipeline(
 # CLI entry point
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the MDC prediction pipeline")
+    parser = argparse.ArgumentParser(
+        description="Run the MDC prediction pipeline"
+    )
     parser.add_argument(
         "--input",
         default="data/context/context.jsonl",
@@ -182,7 +195,8 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
     )
 
     contexts = load_contexts(args.input)
@@ -203,4 +217,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
