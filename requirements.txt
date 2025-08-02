@@ -11,5 +11,4 @@ tqdm
 jsonlines
 fuzzywuzzy
 python-Levenshtein
-promptbench
 openprompt
