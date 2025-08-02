@@ -25,6 +25,7 @@ from utils.meta_cognition import (
 )
 from utils.meta_cognition.error_storage import ErrorStorageManager
 from utils.refinement.schema import CorrectionProposal
+from config.path_config import ERRORS_DIR, LORA_ADAPTERS_DIR
 
 
 def run_meta_loop(
@@ -33,8 +34,8 @@ def run_meta_loop(
     model=None,
     tokenizer=None,
     *,
-    error_dir: str | Path = "data/errors",
-    adapter_dir: str | Path = "models/lora_adapters",
+    error_dir: str | Path = ERRORS_DIR,
+    adapter_dir: str | Path = LORA_ADAPTERS_DIR,
     **tuner_kwargs,
 ) -> Tuple[list, dict]:
     """Execute the meta-learning cycle.
