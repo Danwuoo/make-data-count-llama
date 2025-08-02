@@ -136,4 +136,49 @@ class BaseInferenceModel(ABC):
         return self.predict(*args, **kwargs)
 
 
-__all__ = ["BaseInferenceModel", "LLMResult"]
+# ---------------------------------------------------------------------------
+# Model registry and loader utilities
+
+from .llama3_inference import LLaMA3InferenceModel  # noqa: E402
+from .qwen_inference import QwenInferenceModel  # noqa: E402
+from .deepseek_inference import DeepSeekInferenceModel  # noqa: E402
+from .mixtral_inference import MixtralInferenceModel  # noqa: E402
+from .gemma_inference import GemmaInferenceModel  # noqa: E402
+
+
+MODEL_REGISTRY = {
+    "llama3": LLaMA3InferenceModel,
+    "qwen": QwenInferenceModel,
+    "deepseek": DeepSeekInferenceModel,
+    "mixtral": MixtralInferenceModel,
+    "gemma": GemmaInferenceModel,
+}
+
+
+def get_inference_model(
+    model_name: Optional[str] = None,
+    model_path: Optional[str] = None,
+    **kwargs: Any,
+) -> BaseInferenceModel:
+    """Instantiate an inference model based on ``model_name`` or ``model_path``."""
+
+    if model_name:
+        cls = MODEL_REGISTRY.get(model_name.lower())
+        if not cls:
+            raise ValueError(f"Unsupported model name: {model_name}")
+        return cls(model_path=model_path or model_name, **kwargs)
+    if model_path:
+        lowered = model_path.lower()
+        for key, cls in MODEL_REGISTRY.items():
+            if key in lowered:
+                return cls(model_path=model_path, **kwargs)
+        raise ValueError(f"Could not auto-detect model type from path: {model_path}")
+    raise ValueError("You must provide either model_name or model_path")
+
+
+__all__ = [
+    "BaseInferenceModel",
+    "LLMResult",
+    "MODEL_REGISTRY",
+    "get_inference_model",
+]
