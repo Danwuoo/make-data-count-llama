@@ -79,10 +79,40 @@ flowchart TD
 
 ## Kaggle Notebook 部署指南
 
-1. 建立 Kaggle Notebook，將專案檔案上傳至 `/kaggle/working`。
-2. 於環境中安裝依賴：
+1. 建立 Kaggle Notebook，clone repo(確認repo切換到public)。
    ```bash
-   pip install -r requirements.txt
+   !git clone https://github.com/Danwuoo/make-data-count-llama.git
    ```
-3. 確保模型與資料夾結構與上述專案結構相符。
-4. 執行 `notebooks/07_full_pipeline_test.ipynb`，即可從輸入到輸出一次完成流程。
+2. 安裝依賴項。
+   ```bash
+   !pip install -r /kaggle/working/make-data-count-llama/requirements.txt
+   ```
+   此時會看到報錯，輸入:
+   ```bash
+   !pip install "scipy>=1.10"
+   ```
+4. 接下來把訓練用的資料抓到/data/raw/。
+   ```python
+   import shutil
+   import os
+   
+   # 原始資料夾
+   pdf_dir = "/kaggle/input/make-data-count-finding-data-references/train/PDF"
+   xml_dir = "/kaggle/input/make-data-count-finding-data-references/train/XML"
+   
+   # 目標資料夾（統一放在 raw 目錄下）
+   raw_dir = "/kaggle/working/make-data-count-llama/data/raw"
+   os.makedirs(raw_dir, exist_ok=True)
+   
+   # 複製 PDF
+   for file in os.listdir(pdf_dir):
+    src = os.path.join(pdf_dir, file)
+    dst = os.path.join(raw_dir, file)
+    shutil.copy(src, dst)
+   
+   # 複製 XML
+   for file in os.listdir(xml_dir):
+    src = os.path.join(xml_dir, file)
+    dst = os.path.join(raw_dir, file)
+    shutil.copy(src, dst)
+    ```
