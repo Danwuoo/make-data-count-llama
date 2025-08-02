@@ -21,10 +21,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List
 
-from config.path_config import MODEL_MOUNT_DIR
 from utils.context_builder.schema import ContextUnit
-from utils.llm_inference import LLMResult
-from utils.llm_inference.inference_engine import get_model
+from utils.llm_inference.base_inference import (
+    BaseInferenceModel,
+    LLMResult,
+    get_inference_model,
+)
 from utils.output_writer import generate_submission
 from utils.refinement import RefinementEngine
 
@@ -33,24 +35,6 @@ from utils.refinement import RefinementEngine
 # Configuration
 
 CONFIDENCE_THRESHOLD = 0.7
-
-
-def _resolve_model_path(model_name: str) -> Path:
-    """Return the filesystem path for ``model_name``.
-
-    The repository ships with a LLaMA‑3 checkpoint under ``models/``. For other
-    models we fall back to ``MODEL_MOUNT_DIR / model_name`` so users can mount
-    additional weights as needed.
-    """
-
-    mapping = {
-        "llama3": MODEL_MOUNT_DIR / "llama-3-8b-instruct",
-        "mixtral": MODEL_MOUNT_DIR / "mixtral-8x7b-instruct",
-        "qwen": MODEL_MOUNT_DIR / "qwen-7b-instruct",
-        "gemma": MODEL_MOUNT_DIR / "gemma-7b-it",
-        "deepseek": MODEL_MOUNT_DIR / "deepseek-7b-base",
-    }
-    return Path(mapping.get(model_name.lower(), MODEL_MOUNT_DIR / model_name))
 
 
 # ---------------------------------------------------------------------------
@@ -85,7 +69,7 @@ def load_contexts(input_path: str) -> List[ContextUnit]:
 def run_pipeline(
     contexts: Iterable[ContextUnit],
     *,
-    model_name: str,
+    model: BaseInferenceModel,
     enable_reask: bool,
     output_csv: Path,
     save_errors: bool,
@@ -105,8 +89,6 @@ def run_pipeline(
         errors_dir.mkdir(parents=True, exist_ok=True)
         errors_path = errors_dir / f"errors_{timestamp}.jsonl"
 
-    model_path = _resolve_model_path(model_name)
-    model = get_model(model_name, model_path=model_path)
     refinement = RefinementEngine() if enable_reask else None
 
     predictions: List[dict] = []
@@ -178,6 +160,11 @@ def main() -> None:
     )
     parser.add_argument("--model", default="llama3", help="Model backend name")
     parser.add_argument(
+        "--model-path",
+        default=None,
+        help="Filesystem path to the model weights directory",
+    )
+    parser.add_argument(
         "--reask",
         action="store_true",
         help="Enable self-questioning refinement for low-confidence samples",
@@ -201,9 +188,13 @@ def main() -> None:
     contexts = load_contexts(args.input)
     logging.info("Loaded %d context units", len(contexts))
 
+    model = get_inference_model(
+        model_name=args.model, model_path=args.model_path
+    )
+
     run_pipeline(
         contexts,
-        model_name=args.model,
+        model=model,
         enable_reask=args.reask,
         output_csv=Path(args.output),
         save_errors=args.save_errors,
