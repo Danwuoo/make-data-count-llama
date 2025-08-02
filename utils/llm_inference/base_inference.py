@@ -7,9 +7,12 @@ prompt replay logging.
 """
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, Optional
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from .output_decoder import LLMOutputDecoder, DecodingStrategy
 from .prompt_generator import PromptGenerator
@@ -50,9 +53,22 @@ class BaseInferenceModel(ABC):
         self.model_name = model_path.split("/")[-1]
         self.load_model()
 
-    @abstractmethod
-    def load_model(self) -> None:
-        """Instantiate tokenizer and engine for the model."""
+    def load_model(self) -> None:  # pragma: no cover - heavy load
+        """Instantiate tokenizer and engine for the model.
+
+        This default implementation loads a HuggingFace-compatible model and
+        tokenizer from ``self.model_path``. Subclasses may override for models
+        requiring special handling (e.g., mixture-of-experts).
+        """
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_path, trust_remote_code=True
+        )
+        self.engine = AutoModelForCausalLM.from_pretrained(
+            self.model_path,
+            torch_dtype=torch.float16,
+            device_map="auto",
+            trust_remote_code=True,
+        )
 
     def format_prompt(self, context: str, strategy: str) -> str:
         """Format the prompt for the given ``context`` and ``strategy``."""
@@ -68,17 +84,25 @@ class BaseInferenceModel(ABC):
     ) -> LLMResult:
         """Run inference on ``context`` and return an :class:`LLMResult`."""
         prompt = self.format_prompt(context, strategy)
-        tokens = self.tokenizer.encode(prompt)
-        generated = self.engine.generate(
-            tokens,
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(
+            self.engine.device
+        )
+        outputs = self.engine.generate(
+            **inputs,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
+            do_sample=temperature > 0,
+            output_scores=True,
+            return_dict_in_generate=True,
         )
-        text = self.tokenizer.decode(generated["tokens"])
+        text = self.tokenizer.decode(
+            outputs.sequences[0], skip_special_tokens=True
+        )
+        scores = [score[0].tolist() for score in outputs.scores]
         prediction = self.decoder.decode(
             context_id=context_id,
             text=text,
-            scores=generated["scores"],
+            scores=scores,
             strategy=DecodingStrategy.TEXT2LABEL,
         )
         result = LLMResult(
