@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from typing import Optional
 
+from .meta_cognition import ErrorLogger
+from .meta_cognition.trace_mapper import TraceMapper
+
 from .llm_inference import (
     LLaMA3Inference,
     LLMResult,
@@ -31,12 +34,19 @@ class LLMClassifier:
         context_id: str = "ctx_0",
         strategy: str = "zero-shot",
         run_perturbation: bool | None = None,
-    ) -> FinalPrediction:
-        """Classify ``text`` and return a :class:`FinalPrediction`.
+        *,
+        error_logger: ErrorLogger | None = None,
+        confidence_threshold: float | None = None,
+    ) -> tuple[FinalPrediction, list[str]]:
+        """Classify ``text`` and return prediction and logged error IDs.
 
         When ``run_perturbation`` is ``True`` (default when a tester is
         provided), the classifier performs prompt perturbation testing and
-        annotates the prediction with consistency metrics.
+        annotates the prediction with consistency metrics. If ``error_logger``
+        and ``confidence_threshold`` are supplied, predictions whose
+        confidence falls below ``confidence_threshold`` are logged as
+        :class:`~utils.meta_cognition.schema.ErrorRecord` instances and the
+        corresponding error IDs are returned.
         """
 
         result: LLMResult = self.inference.infer(
@@ -66,7 +76,23 @@ class LLMClassifier:
             )
             prediction.is_consistent = report.is_consistent
             prediction.perturbation_score = report.invariance_score
-        return prediction
+
+        error_ids: list[str] = []
+        if (
+            error_logger is not None
+            and confidence_threshold is not None
+            and result.confidence < confidence_threshold
+        ):
+            record = TraceMapper.from_llm_result(
+                result,
+                context_id=context_id,
+                confidence_threshold=confidence_threshold,
+                reason="confidence below threshold",
+            )
+            logged = error_logger.log(record)
+            error_ids.append(logged.error_id)
+
+        return prediction, error_ids
 
 
 _classifier: Optional[LLMClassifier] = None
@@ -93,5 +119,5 @@ def classify_citation(text: str, context_id: str = "ctx_0") -> str:
     classifier = _get_classifier()
     if classifier is None:
         return "primary"
-    prediction = classifier.classify(text=text, context_id=context_id)
+    prediction, _ = classifier.classify(text=text, context_id=context_id)
     return prediction.final_label
